@@ -20,9 +20,12 @@ mirrored from the contracts repo's `deployments/testnet.json`.
 
 | Component | Status | Address |
 |---|---|---|
-| Attestation contract | ✅ deployed | `CB2MGYTG6MIIDYWVB5BV4FLEF7KRDEF556JMVZXSZ22XALB7MUC7LU2S` |
-| Escrow contract | deploy with the steps below | `""` (fill in) |
-| Escrow asset (SAC/USDC) | per deployment | `""` (fill in) |
+| Attestation contract | ✅ deployed | `CC2ZHNVPKOGC56CZ6B3W3VWR7V67UZMDRFJHS552JWLYNYEKVXSUS535` |
+| Escrow contract | ✅ deployed | `CBRHBEEOMXXY7JOQC7A7YNKJ3G66S4TUHUEV3SJNFZQXWSKKOMM4JJ2R` |
+| Escrow asset (SAC/USDC) | ✅ deployed | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` (testnet USDC) |
+| Escrow subject | ✅ | `GAQ3AI6CQ3473JMQTYV3ONNU4K7ADQ25NIOCW2MQDBAPKHLNJOP2U7ZL` |
+| Escrow claim type | ✅ | `kyc_verified` |
+| Escrow beneficiary | ✅ | `GAQ3AI6CQ3473JMQTYV3ONNU4K7ADQ25NIOCW2MQDBAPKHLNJOP2U7ZL` |
 
 ## Deploying the contracts (contracts repo)
 
@@ -55,10 +58,10 @@ This appends `escrow_contract`, `escrow_asset`, `escrow_subject`,
 
 ## Wiring the frontend
 
-Copy the escrow fields into this repo's
-`src/config/deployments/testnet.json` (or point `VITE_SOROBAN_RPC_URL` /
-`VITE_HORIZON_URL` / `VITE_NETWORK_PASSPHRASE` at another network in
-`.env.local`):
+The live addresses are already wired into this repo's
+`src/config/deployments/testnet.json`. To point at another network, set
+`VITE_SOROBAN_RPC_URL` / `VITE_HORIZON_URL` /
+`VITE_NETWORK_PASSPHRASE` in `.env.local`:
 
 ```bash
 npm run dev
