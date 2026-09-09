@@ -2,8 +2,8 @@
 
 This guide walks through the full protocol demo end to end on Stellar
 **testnet**: connect a wallet, issue an attestation, verify it, revoke it,
-prove a claim selectively, and release USDC from an escrow that gates the
-release **on-chain** on the attestation.
+prove a claim selectively, and release tokens from an escrow that gates
+the release **on-chain** on the attestation.
 
 ## Prerequisites
 
@@ -62,13 +62,15 @@ your browser.
   commitment and confirms the match without the value ever being revealed.
 - Wrong value or salt → **NO MATCH**.
 
-## 7. USDC escrow demo
+## 7. Escrow demo (attestation-gated release)
 
 With the escrow deployed and configured (see `TESTNET.md`):
 
-1. **USDC Escrow** tab — the diagram shows
-   `Stellar Account → Attestation Contract → Escrow Contract → SAC/USDC`.
-2. **Deposit** USDC as the subject. The escrow balance updates.
+1. **{asset} Escrow** tab (the label follows the configured
+   `escrow_asset_symbol`, e.g. `USDC` or the demo `ATTD` token) — the
+   diagram shows
+   `Stellar Account → Attestation Contract → Escrow Contract → SAC`.
+2. **Deposit** the escrow asset as the subject. The escrow balance updates.
 3. **Release**:
    - With a valid attestation: Freighter approves, the verify() edge
      highlights, and the transaction panel shows the `released` event —
@@ -79,6 +81,10 @@ With the escrow deployed and configured (see `TESTNET.md`):
      contract's verification.
 4. **Withdraw** — before release, a depositor can claw back their own
    deposit.
+
+The demo escrow ships pre-funded (the demo account deposited 25 ATTD), so
+step 2 is optional for a quick release demo — see `TESTNET.md` for the
+demo account and how to re-seed the deposit.
 
 ## 8. Audit trail
 

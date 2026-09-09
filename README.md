@@ -74,13 +74,21 @@ hard-code addresses.
   "horizon_url": "https://horizon-testnet.stellar.org",
   "network_passphrase": "Test SDF Network ; September 2015",
   "attestation_contract": "CC2…S535",   // deployed
-  "escrow_contract": "CBR…J2R",         // deployed
-  "escrow_asset": "CBI…DAMA",           // testnet USDC SAC
+  "escrow_contract": "CCN…IIV",         // demo escrow (holds ATTD)
+  "escrow_asset": "CB5…2T2S",           // ATTD SAC (mintable demo token)
+  "escrow_asset_symbol": "ATTD",
+  "escrow_asset_decimals": 7,
   "escrow_subject": "GAQ…7ZL",
   "escrow_claim_type": "kyc_verified",
   "escrow_beneficiary": "GAQ…7ZL"
 }
 ```
+
+The escrow page is asset-agnostic: it renders the symbol/decimals from
+the config. Canonical testnet USDC cannot be minted programmatically
+(minting requires Circle's admin contract; the faucet is captcha-gated),
+so the demo escrow holds **ATTD**, a self-issued SAC token with the same
+7-decimal layout — the gating flow under test is identical.
 
 Optional env overrides (`VITE_SOROBAN_RPC_URL`, `VITE_HORIZON_URL`,
 `VITE_NETWORK_PASSPHRASE`) are documented in [`.env.example`](.env.example).
