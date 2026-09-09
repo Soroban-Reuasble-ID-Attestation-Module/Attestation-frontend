@@ -15,6 +15,10 @@ export interface DeploymentConfig {
   attestationContract: string;
   escrowContract: string;
   escrowAsset: string;
+  /** Display symbol of the escrow asset (e.g. USDC). */
+  escrowAssetSymbol: string;
+  /** Decimals of the escrow asset, used to convert display ↔ base units. */
+  escrowAssetDecimals: number;
   escrowSubject: string;
   escrowClaimType: string;
   escrowBeneficiary: string;
@@ -37,6 +41,8 @@ function readConfig(): DeploymentConfig {
     attestationContract: testnet.attestation_contract ?? '',
     escrowContract: testnet.escrow_contract ?? '',
     escrowAsset: testnet.escrow_asset ?? '',
+    escrowAssetSymbol: testnet.escrow_asset_symbol ?? 'USDC',
+    escrowAssetDecimals: testnet.escrow_asset_decimals ?? 7,
     escrowSubject: testnet.escrow_subject ?? '',
     escrowClaimType: testnet.escrow_claim_type ?? '',
     escrowBeneficiary: testnet.escrow_beneficiary ?? '',

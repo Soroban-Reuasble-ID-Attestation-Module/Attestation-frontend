@@ -20,16 +20,18 @@ import { explorerContractUrl } from '@/lib/network';
 import { shortenAddress, formatAmount } from '@/lib/format';
 import type { TxResult } from '@/lib/contract';
 
-const USDC_DECIMALS = 7;
-
 /**
- * USDC escrow demonstration.
+ * Escrow demonstration.
  *
- * Flow: subject deposits USDC → escrow holds funds → release() is
- * triggered → the ESCROW contract itself calls the attestation contract's
- * verify() on-chain → valid: funds transfer to the beneficiary; invalid:
- * release fails with AttestationNotVerified. The frontend can only trigger
- * release — it can never bypass the gate.
+ * Flow: subject deposits the escrow asset (e.g. USDC) → escrow holds
+ * funds → release() is triggered → the ESCROW contract itself calls the
+ * attestation contract's verify() on-chain → valid: funds transfer to the
+ * beneficiary; invalid: release fails with AttestationNotVerified. The
+ * frontend can only trigger release — it can never bypass the gate.
+ *
+ * The asset symbol/decimals come from the deployment config (the escrow
+ * accepts any SAC-compatible token), so the page is not hard-coded to a
+ * single asset.
  */
 export function EscrowDemo() {
   const { address, sign } = useWalletStore();
@@ -45,7 +47,7 @@ export function EscrowDemo() {
   const [verifying, setVerifying] = useState(false);
 
   const amountToBaseUnits = (value: string): bigint =>
-    BigInt(Math.round(Number(value) * 10 ** USDC_DECIMALS) || 0);
+    BigInt(Math.round(Number(value) * 10 ** deployment.escrowAssetDecimals) || 0);
 
   const depositMutation = useMutation<TxResult, Error>({
     mutationFn: () =>
@@ -55,7 +57,7 @@ export function EscrowDemo() {
         signTransaction: sign,
       }),
     onSuccess: (result) => {
-      recordTx(toHistoryEntry(result, deployment.escrowContract, 'deposit', `Deposit ${depositAmount} USDC`));
+      recordTx(toHistoryEntry(result, deployment.escrowContract, 'deposit', `Deposit ${depositAmount} ${deployment.escrowAssetSymbol}`));
       void queryClient.invalidateQueries({ queryKey: ['escrow'] });
     },
   });
@@ -88,24 +90,24 @@ export function EscrowDemo() {
         signTransaction: sign,
       }),
     onSuccess: (result) => {
-      recordTx(toHistoryEntry(result, deployment.escrowContract, 'withdraw', `Withdraw ${withdrawAmount} USDC`));
+      recordTx(toHistoryEntry(result, deployment.escrowContract, 'withdraw', `Withdraw ${withdrawAmount} ${deployment.escrowAssetSymbol}`));
       void queryClient.invalidateQueries({ queryKey: ['escrow'] });
     },
   });
 
   const balanceDisplay = useMemo(
-    () => (escrow.data ? formatAmount(escrow.data.balance, USDC_DECIMALS) : '—'),
+    () => (escrow.data ? formatAmount(escrow.data.balance, deployment.escrowAssetDecimals) : '—'),
     [escrow.data],
   );
   const depositDisplay = useMemo(
-    () => (escrow.data ? formatAmount(escrow.data.deposit, USDC_DECIMALS) : '—'),
+    () => (escrow.data ? formatAmount(escrow.data.deposit, deployment.escrowAssetDecimals) : '—'),
     [escrow.data],
   );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-100">USDC Escrow Demonstration</h1>
+        <h1 className="text-2xl font-bold text-slate-100">{deployment.escrowAssetSymbol} Escrow Demonstration</h1>
         <p className="mt-1 text-sm text-slate-400">
           Funds are released only when the <strong>escrow contract itself</strong>{' '}
           confirms the subject's attestation on-chain — never at this
@@ -159,7 +161,7 @@ export function EscrowDemo() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Escrow balance" description="Live on-chain state (USDC, 7 decimals).">
+        <Card title="Escrow balance" description={`Live on-chain state (${deployment.escrowAssetSymbol}, ${deployment.escrowAssetDecimals} decimals).`}>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div className="rounded-lg border border-slate-800 bg-slate-950 px-4 py-6">
               <div className="text-2xl font-bold text-slate-100">{balanceDisplay}</div>
@@ -183,7 +185,7 @@ export function EscrowDemo() {
               depositMutation.mutate();
             }}
           >
-            <Field label="Deposit amount (USDC)">
+            <Field label={`Deposit amount (${deployment.escrowAssetSymbol})`}>
               <div className="flex gap-2">
                 <Input
                   type="number"
@@ -208,7 +210,7 @@ export function EscrowDemo() {
             }}
           >
             <Field
-              label="Release amount (USDC)"
+              label={`Release amount (${deployment.escrowAssetSymbol})`}
               hint="The escrow re-checks verify(subject, claim_type) on-chain. Invalid → AttestationNotVerified, funds stay put."
             >
               <div className="flex gap-2">

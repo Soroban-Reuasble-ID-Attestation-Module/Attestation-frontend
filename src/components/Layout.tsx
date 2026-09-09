@@ -9,7 +9,7 @@ const navItems = [
   { to: '/revoke', label: 'Revoke' },
   { to: '/disclose', label: 'Selective Disclosure' },
   { to: '/registry', label: 'Registry' },
-  { to: '/escrow', label: 'USDC Escrow' },
+  { to: '/escrow', label: `${deployment.escrowAssetSymbol} Escrow` },
 ];
 
 export function Layout() {

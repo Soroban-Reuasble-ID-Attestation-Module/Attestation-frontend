@@ -18,7 +18,7 @@ export function Dashboard() {
         <h1 className="text-2xl font-bold text-slate-100">Identity Dashboard</h1>
         <p className="mt-1 text-sm text-slate-400">
           Reusable Stellar identity and attestations — issue, verify, revoke,
-          selectively disclose, and escrow USDC against on-chain attestations.
+          selectively disclose, and escrow a SAC token against on-chain attestations.
         </p>
       </div>
 

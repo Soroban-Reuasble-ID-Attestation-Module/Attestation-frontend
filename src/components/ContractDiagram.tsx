@@ -84,7 +84,7 @@ function Edge({
 /**
  * Contract visualization for the escrow demonstration.
  *
- *   Stellar Account → Attestation Contract → Escrow Contract → SAC / USDC
+ *   Stellar Account → Attestation Contract → Escrow Contract → SAC / token
  *
  * The verify() edge is highlighted while a release is being evaluated; the
  * transfer edge lights up when funds move. This makes the on-chain
@@ -124,7 +124,7 @@ export function ContractDiagram({ state }: { state: DiagramState }) {
           activeLabel="funds released"
         />
         <Node
-          label="SAC / USDC"
+          label={`SAC / ${deployment.escrowAssetSymbol}`}
           address={deployment.escrowAsset}
           tone="green"
         />
