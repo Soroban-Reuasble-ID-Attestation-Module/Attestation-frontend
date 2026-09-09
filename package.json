@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "description": "Production-grade React frontend for the Stellar attestation protocol: wallet auth, attestation issuance/verification/revocation, selective disclosure, and an on-chain USDC escrow demonstration.",
   "scripts": {
     "dev": "vite",

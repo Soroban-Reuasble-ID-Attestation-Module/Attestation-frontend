@@ -73,17 +73,39 @@ hard-code addresses.
   "rpc_url": "https://soroban-testnet.stellar.org",
   "horizon_url": "https://horizon-testnet.stellar.org",
   "network_passphrase": "Test SDF Network ; September 2015",
-  "attestation_contract": "CB2…LU2S",   // deployed
-  "escrow_contract": "",                // set after `make deploy-escrow-testnet`
-  "escrow_asset": "",
-  "escrow_subject": "",
+  "attestation_contract": "CC2…S535",   // deployed
+  "escrow_contract": "CBR…J2R",         // deployed
+  "escrow_asset": "CBI…DAMA",           // testnet USDC SAC
+  "escrow_subject": "GAQ…7ZL",
   "escrow_claim_type": "kyc_verified",
-  "escrow_beneficiary": ""
+  "escrow_beneficiary": "GAQ…7ZL"
 }
 ```
 
 Optional env overrides (`VITE_SOROBAN_RPC_URL`, `VITE_HORIZON_URL`,
 `VITE_NETWORK_PASSPHRASE`) are documented in [`.env.example`](.env.example).
+
+## Deployment (Vercel)
+
+The app is a static Vite SPA and deploys to Vercel as-is. The repository
+ships a [`vercel.json`](vercel.json) with SPA rewrites (so deep links like
+`/issue` and `/escrow` work on refresh), immutable caching for hashed
+`/assets/*` bundles, and security headers.
+
+```bash
+# CLI
+npx vercel --prod
+
+# or connect the GitHub repo in the Vercel dashboard — the framework
+# preset auto-detects Vite and runs `npm run build` (dist/).
+```
+
+Node `>=20.19` is required (pinned in `package.json` engines and
+`.nvmrc`). No environment variables are required for the testnet build —
+the live contract addresses are baked into
+`src/config/deployments/testnet.json`. Set `VITE_*` env vars in the Vercel
+project settings only when overriding the network (e.g. pointing a
+preview at another RPC).
 
 ## Project structure
 

@@ -15,7 +15,7 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    sourcemap: true,
+    sourcemap: false,
     target: 'es2022',
     // @stellar/stellar-sdk is inherently large; keep the warning threshold
     // above its minified size so real regressions stay visible.
