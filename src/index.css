@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --color-brand-50: #eef7ff;
+  --color-brand-100: #d9edff;
+  --color-brand-500: #1d6fe0;
+  --color-brand-600: #1756b8;
+  --color-brand-700: #144a9e;
+}
+
+html {
+  @apply bg-slate-950 text-slate-100 antialiased;
+}
+
+body {
+  @apply min-h-screen;
+}
+
+/* Monospace surfaces for addresses, hashes, and XDR payloads. */
+.mono {
+  @apply font-mono;
+}
+
+/* Subtle scrollbar for code blocks. */
+pre {
+  @apply overflow-auto;
+}
