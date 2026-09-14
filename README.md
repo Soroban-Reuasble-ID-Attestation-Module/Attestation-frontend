@@ -12,6 +12,15 @@ contract itself gates fund release on the attestation contract's `verify()`.
 | TypeScript / Python SDKs + backend service | [Attestation-backend-sdk](https://github.com/Soroban-Reuasble-ID-Attestation-Module/Attestation-backend-sdk) |
 | **This frontend** | [Attestation-frontend](https://github.com/Soroban-Reuasble-ID-Attestation-Module/Attestation-frontend) |
 
+## Live demo
+
+**<https://attestation-frontend.vercel.app>** — the testnet build, deployed on
+Vercel from `main`. Contract addresses are baked into
+[`src/config/deployments/testnet.json`](src/config/deployments/testnet.json),
+so the live app reads and writes the same attestation and escrow contracts as
+the repositories above. Install [Freighter](https://freighter.app), switch it
+to Testnet, and connect.
+
 ## Features
 
 - **Connect account** — Freighter wallet integration. Displays public key,
