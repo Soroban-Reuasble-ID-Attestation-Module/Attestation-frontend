@@ -112,12 +112,23 @@ To put the [backend service](https://github.com/Soroban-Reuasble-ID-Attestation-
 VITE_API_BASE_URL=https://attestation-api.example.com
 ```
 
+This is a **build-time** setting, not a runtime one: Vite inlines `VITE_*`
+values into the bundle during `npm run build`. To enable the backend for a
+Vercel deployment, set the variable in the project first, then rebuild —
+changing it in the dashboard alone does not affect an already-built
+deployment:
+
+```bash
+npx vercel env add VITE_API_BASE_URL production   # then paste the URL
+npx vercel --prod                                 # rebuild so it is inlined
+```
+
 The read-only calls — `verify` and `get_attestation` — are then served by the
 backend instead of the browser, and automatically fall back to Soroban RPC
 whenever it is unset, slow, or unhealthy. The contract stays the source of
 truth either way, so the app is fully functional with or without a backend.
 
-Two constraints apply:
+Three constraints apply:
 
 - The backend must be configured with the same `ATTESTATION_CONTRACT_ID` as
   [`src/config/deployments/testnet.json`](src/config/deployments/testnet.json).
@@ -126,6 +137,12 @@ Two constraints apply:
 - Its read routes must stay public (`PUBLIC_READS=true`, the default). The app
   never ships an API key to the browser, so a deployment with authenticated
   reads simply falls back to direct contract reads.
+- The backend's CORS allow-list must include the origin the app is served
+  from (`https://attestation-frontend.vercel.app`, plus any preview origin you
+  test from). A rejected preflight is indistinguishable from an unhealthy
+  backend: the browser call fails and the app quietly reads the contract
+  instead, so the UI looks fine while the backend link is in fact dead.
+  Confirm it in the network tab rather than by the absence of errors.
 
 Writes are never routed through the backend: `issue`, `revoke`, `add_issuer`,
 `remove_issuer`, and every escrow call still go straight to the contract so the
