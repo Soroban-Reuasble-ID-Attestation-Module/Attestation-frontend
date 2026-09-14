@@ -82,7 +82,7 @@ describe('verifyViaApi', () => {
 });
 
 describe('getAttestationViaApi', () => {
-  const row = {
+  const expected = {
     id: 4,
     subject: 'GSUBJECT',
     claim_type: 'kyc_verified',
@@ -91,22 +91,57 @@ describe('getAttestationViaApi', () => {
     issued_at: 1_700_000_000,
     expiry: 1_900_000_000,
     revoked: false,
+  };
+
+  // Verbatim shape served when the record is read live from the contract
+  // (`source: "contract"`): the SDK's Attestation type is camelCase.
+  const contractRow = {
+    id: 4,
+    subject: 'GSUBJECT',
+    claimType: 'kyc_verified',
+    claimHash: 'ab'.repeat(32),
+    issuer: 'GISSUER',
+    issuedAt: 1_700_000_000,
+    expiry: 1_900_000_000,
+    revoked: false,
     source: 'contract',
   };
 
-  it('maps an API row onto the contract record shape', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(row)));
+  // Verbatim shape of the Postgres-index fallback (`source: "index"`), which
+  // the service serializes with toRowJson and therefore stays snake_case.
+  const indexRow = {
+    id: 4,
+    subject: 'GSUBJECT',
+    claim_type: 'kyc_verified',
+    claim_hash: 'ab'.repeat(32),
+    issuer: 'GISSUER',
+    issued_at: 1_700_000_000,
+    expiry: 1_900_000_000,
+    revoked: false,
+    source: 'index',
+  };
 
-    await expect(getAttestationViaApi(4)).resolves.toEqual({
-      id: 4,
-      subject: 'GSUBJECT',
-      claim_type: 'kyc_verified',
-      claim_hash: 'ab'.repeat(32),
-      issuer: 'GISSUER',
-      issued_at: 1_700_000_000,
-      expiry: 1_900_000_000,
-      revoked: false,
-    });
+  it('maps a contract-served (camelCase) row onto the record shape', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(contractRow)));
+    await expect(getAttestationViaApi(4)).resolves.toEqual(expected);
+  });
+
+  it('maps an index-served (snake_case) row onto the record shape', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(indexRow)));
+    await expect(getAttestationViaApi(4)).resolves.toEqual(expected);
+  });
+
+  it('never renders a missing field as "undefined" or NaN', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ ...contractRow, claimType: undefined, issuedAt: undefined }),
+      ),
+    );
+
+    const record = await getAttestationViaApi(4);
+    expect(record?.claim_type).toBe('');
+    expect(Number.isNaN(record?.issued_at)).toBe(false);
   });
 
   it('returns null for a 404 instead of throwing', async () => {

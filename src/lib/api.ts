@@ -87,14 +87,26 @@ async function apiGet<T>(path: string): Promise<T> {
   }
 }
 
-/** Shape of a record as returned by the API (`GET /v1/attestations/:id`). */
+/**
+ * Shape of a record as returned by the API (`GET /v1/attestations/:id`).
+ *
+ * That one route has two serializers and they disagree on casing: a record
+ * read live from the contract (`source: "contract"`) is the SDK's
+ * `Attestation`, which is camelCase (`claimType`, `claimHash`, `issuedAt`),
+ * while the Postgres-index fallback (`source: "index"`) goes through the
+ * service's `toRowJson`, which is snake_case. Both spellings are accepted
+ * below so a record survives whichever path served it.
+ */
 interface ApiAttestationRecord {
   id: number;
   subject: string;
-  claim_type: string;
-  claim_hash: string;
+  claimType?: string;
+  claim_type?: string;
+  claimHash?: string;
+  claim_hash?: string;
   issuer: string;
-  issued_at: number;
+  issuedAt?: number;
+  issued_at?: number;
   expiry: number;
   revoked: boolean;
   /** 'contract' when read live from Soroban, 'index' when served from Postgres. */
@@ -105,10 +117,12 @@ function toRecord(row: ApiAttestationRecord): AttestationRecord {
   return {
     id: Number(row.id),
     subject: String(row.subject),
-    claim_type: String(row.claim_type),
-    claim_hash: String(row.claim_hash),
+    // Fall back to an empty string / 0 rather than letting a missing field
+    // become the literal "undefined" or NaN in the rendered record.
+    claim_type: String(row.claimType ?? row.claim_type ?? ''),
+    claim_hash: String(row.claimHash ?? row.claim_hash ?? ''),
     issuer: String(row.issuer),
-    issued_at: Number(row.issued_at),
+    issued_at: Number(row.issuedAt ?? row.issued_at ?? 0),
     expiry: Number(row.expiry),
     revoked: Boolean(row.revoked),
   };
