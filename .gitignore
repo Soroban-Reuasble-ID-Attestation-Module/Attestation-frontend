@@ -28,3 +28,4 @@ blob-report/
 logs/
 *.log
 npm-debug.log*
+.vercel

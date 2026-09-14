@@ -5,12 +5,23 @@ import {
   type ScValArg,
   type TxResult,
 } from '@/lib/contract';
+import {
+  getAttestationViaApi,
+  isApiEnabled,
+  verifyViaApi,
+} from '@/lib/api';
 
 /**
  * Attestation contract facade — typed wrappers over the Soroban ABI.
  *
  * Mirrors the backend SDK's interface so the frontend can be swapped onto
  * the SDK service without UI changes.
+ *
+ * Read-only calls (`verify`, `get_attestation`) are served by the backend
+ * REST API when `VITE_API_BASE_URL` is configured, and fall back to reading
+ * the contract directly whenever the backend is unset or unhealthy. The
+ * contract is the source of truth either way. Mutations always go straight
+ * to the contract so the user's own wallet signs them.
  */
 
 export interface AttestationRecord {
@@ -68,6 +79,17 @@ function args(...values: ScValArg[]): ScValArg[] {
   return values;
 }
 
+/**
+ * True when the backend API is an acceptable source for `contractId`.
+ *
+ * The service is configured with a single `ATTESTATION_CONTRACT_ID`, so it
+ * is only trustworthy when the caller is reading that same deployment — a
+ * call against any other contract id must go to the chain directly.
+ */
+function canUseApi(contractId: string): boolean {
+  return isApiEnabled() && contractId === deployment.attestationContract;
+}
+
 /** Issue a new attestation; returns the attestation id. */
 export async function issueAttestation(
   options: IssuanceOptions,
@@ -110,8 +132,18 @@ export async function revokeAttestation(
 export async function verifyAttestation(
   options: VerifyOptions,
 ): Promise<boolean> {
+  const contractId = options.contractId ?? deployment.attestationContract;
+
+  if (canUseApi(contractId)) {
+    try {
+      return await verifyViaApi(options.subject, options.claimType);
+    } catch {
+      // Backend unavailable — verify against the contract instead.
+    }
+  }
+
   const result = await simulateContractCall({
-    contractId: options.contractId ?? deployment.attestationContract,
+    contractId,
     method: 'verify',
     args: args(
       { value: options.subject, type: 'address' },
@@ -128,6 +160,16 @@ export async function getAttestation(
   source: string,
   contractId = deployment.attestationContract,
 ): Promise<AttestationRecord | null> {
+  if (canUseApi(contractId)) {
+    try {
+      // A 404 from the API is definitive (absent from chain *and* index) and
+      // resolves to null; only real failures reach the fallback below.
+      return await getAttestationViaApi(attestationId);
+    } catch {
+      // Backend unavailable — read the contract instead.
+    }
+  }
+
   try {
     const result = await simulateContractCall({
       contractId,
@@ -162,7 +204,12 @@ export async function verifyClaimCommitment(
   return Boolean(result);
 }
 
-/** Read-only issuer check. */
+/**
+ * Read-only issuer check.
+ *
+ * Always reads the contract: the backend API exposes no issuer-registry
+ * route (only `POST`/`DELETE /v1/issuers`, which are admin mutations).
+ */
 export async function isIssuer(
   address: string,
   source: string,

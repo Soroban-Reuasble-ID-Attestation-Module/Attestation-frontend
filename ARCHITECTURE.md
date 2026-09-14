@@ -4,7 +4,9 @@
 
 The frontend is a single-page React application that talks **directly to
 the Soroban contracts** on Stellar testnet. It never stores secret keys and
-never signs outside the wallet extension.
+never signs outside the wallet extension. An optional backend REST API can
+serve read-only queries; when it is absent or unhealthy the app reads the
+contract itself.
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
@@ -21,9 +23,42 @@ never signs outside the wallet extension.
 │    │     └─ Escrow contract       (deposit, release, …)    │
 │    ├── Horizon (horizon-testnet.stellar.org)               │
 │    │     └─ account existence + balances                   │
+│    ├── Backend REST API  (optional, VITE_API_BASE_URL)     │
+│    │     ├─ verify, get_attestation (read-only)            │
+│    │     └─ falls back to Soroban RPC on any failure       │
 │    └── Freighter extension — signTransaction(xdr)          │
 └────────────────────────────────────────────────────────────┘
 ```
+
+### Optional backend API layer
+
+`src/lib/api.ts` is a thin client over the backend service in
+`Attestation-backend-sdk` (`services/api`). It is **off unless
+`VITE_API_BASE_URL` is set**, and it implements reads only:
+
+| Frontend call | Route | Notes |
+|---|---|---|
+| `verifyViaApi` | `GET /v1/accounts/:address/attestations/:claimType/verify` | The service calls `verify()` on the contract itself, so the answer is still authoritative. |
+| `getAttestationViaApi` | `GET /v1/attestations/:id` | Read live from the contract, with the service's Postgres index as a documented fallback (`source` field). A 404 is definitive. |
+
+Rules that keep the backend non-load-bearing:
+
+- **Fallback is total.** `lib/attestation.ts` wraps each call in a try/catch
+  and reads the contract if the request throws. A `false` verification or a
+  404 is a real answer and is *not* retried against the chain.
+- **Reads only.** Mutations live in `lib/contract.ts` and are signed by the
+  user's wallet. The frontend never asks the service to act on a user's behalf,
+  so `POST /v1/attestations` and friends are unused.
+- **Same contract only.** The service is configured with one
+  `ATTESTATION_CONTRACT_ID`; `canUseApi()` in `lib/attestation.ts` consults it
+  only when the caller is reading that exact deployment.
+- **No secrets in the bundle.** Only public read routes are used
+  (`PUBLIC_READS=true`, the API default). Authenticated reads would require
+  shipping an API key to the browser, which is refused — such a deployment
+  falls back to direct contract reads instead.
+
+There is no issuer-registry route to use: the API exposes only the admin
+mutations `POST`/`DELETE /v1/issuers`, so `isIssuer` always reads the contract.
 
 ## 2. Transaction lifecycle
 
@@ -63,6 +98,10 @@ and call the shared client. TanStack Query hooks cache read results;
 mutations invalidate the affected query keys on success and append a
 transaction-history entry.
 
+The two contract reads `verify` and `get_attestation` first try the optional
+backend API (see §1) and silently fall back to the contract, so the UI code
+and query keys are identical with or without a backend configured.
+
 ### USDC escrow (the critical path)
 `src/pages/EscrowDemo.tsx` + `src/lib/escrow.ts`:
 
@@ -98,10 +137,16 @@ passphrase, contract ids) and applies optional `VITE_*` env overrides.
 Every page imports addresses from here; there are no hard-coded contract
 addresses in components.
 
+`VITE_API_BASE_URL` is read separately by `src/lib/api.ts` (not through the
+deployment object) because it is an optional transport choice rather than
+network state. `.env.example` documents every variable.
+
 ## 6. Testing strategy
 
 - **Unit** — commitment scheme (matches `sha256(value ‖ salt)`), address
-  formatting/validation, SCVal ABI conversion.
+  formatting/validation, SCVal ABI conversion, backend API client behaviour
+  (timeouts, 404 handling, error mapping) and the API→contract read fallback
+  in `attestation.ts`.
 - **Component** — TxPanel (status/ledger/events rendering), WalletConnect
   (disconnected state, Freighter-missing error).
 - **E2E** — Playwright smoke tests: navigation across all sections, wallet

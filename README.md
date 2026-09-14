@@ -93,6 +93,35 @@ so the demo escrow holds **ATTD**, a self-issued SAC token with the same
 Optional env overrides (`VITE_SOROBAN_RPC_URL`, `VITE_HORIZON_URL`,
 `VITE_NETWORK_PASSPHRASE`) are documented in [`.env.example`](.env.example).
 
+## Optional: backend REST API
+
+The app reads the contract directly by default and needs no backend at all.
+To put the [backend service](https://github.com/Soroban-Reuasble-ID-Attestation-Module/Attestation-backend-sdk)
+(`services/api`) in front of the chain, point the frontend at it:
+
+```bash
+VITE_API_BASE_URL=https://attestation-api.example.com
+```
+
+The read-only calls — `verify` and `get_attestation` — are then served by the
+backend instead of the browser, and automatically fall back to Soroban RPC
+whenever it is unset, slow, or unhealthy. The contract stays the source of
+truth either way, so the app is fully functional with or without a backend.
+
+Two constraints apply:
+
+- The backend must be configured with the same `ATTESTATION_CONTRACT_ID` as
+  [`src/config/deployments/testnet.json`](src/config/deployments/testnet.json).
+  The app only consults the backend for that contract and reads any other
+  contract id from the chain.
+- Its read routes must stay public (`PUBLIC_READS=true`, the default). The app
+  never ships an API key to the browser, so a deployment with authenticated
+  reads simply falls back to direct contract reads.
+
+Writes are never routed through the backend: `issue`, `revoke`, `add_issuer`,
+`remove_issuer`, and every escrow call still go straight to the contract so the
+user's own wallet signs them.
+
 ## Deployment (Vercel)
 
 The app is a static Vite SPA and deploys to Vercel as-is. The repository
