@@ -137,12 +137,15 @@ Three constraints apply:
 - Its read routes must stay public (`PUBLIC_READS=true`, the default). The app
   never ships an API key to the browser, so a deployment with authenticated
   reads simply falls back to direct contract reads.
-- The backend's CORS allow-list must include the origin the app is served
-  from (`https://attestation-frontend.vercel.app`, plus any preview origin you
-  test from). A rejected preflight is indistinguishable from an unhealthy
-  backend: the browser call fails and the app quietly reads the contract
-  instead, so the UI looks fine while the backend link is in fact dead.
-  Confirm it in the network tab rather than by the absence of errors.
+- The backend must allow the origin the app is served from
+  (`https://attestation-frontend.vercel.app`, plus any preview origin you test
+  from). The reference service registers `@fastify/cors` with `origin: true`,
+  which reflects whatever origin asks and so needs no extra configuration; a
+  hardened deployment that pins its allow-list has to add this origin by hand.
+  Getting it wrong is silent — the rejected preflight fails the browser call,
+  which the app reads as "backend unavailable" and answers from the contract,
+  so the UI looks healthy while the backend link is dead. Confirm it in the
+  network tab rather than by the absence of errors.
 
 Writes are never routed through the backend: `issue`, `revoke`, `add_issuer`,
 `remove_issuer`, and every escrow call still go straight to the contract so the
